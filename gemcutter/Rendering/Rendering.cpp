@@ -60,6 +60,27 @@ namespace
 		1   // unsigned char
 	};
 
+	const int textureFormatChannelCount_Resolve[] = {
+		1, // R_8
+		1, // R_16
+		1, // R_16F
+		1, // R_32
+		1, // R_32F
+		3, // RGB_8
+		3, // RGB_16
+		3, // RGB_16F
+		3, // RGB_32
+		3, // RGB_32F
+		4, // RGBA_8
+		4, // RGBA_16
+		4, // RGBA_16F
+		4, // RGBA_32
+		4, // RGBA_32F
+		1, // DEPTH_24
+		3, // sRGB_8
+		4  // sRGBA_8
+	};
+
 	const int vertexAccess_Resolve[] = {
 		GL_READ_ONLY,
 		GL_WRITE_ONLY,
@@ -88,6 +109,11 @@ namespace
 	};
 
 	const unsigned format_Resolve[] = {
+		GL_R8,
+		GL_R16,
+		GL_R16F,
+		GL_R32UI,
+		GL_R32F,
 		GL_RGB8,
 		GL_RGB16,
 		GL_RGB16F,
@@ -247,27 +273,7 @@ namespace gem
 
 	unsigned CountChannels(TextureFormat format)
 	{
-		switch (format)
-		{
-		case TextureFormat::RGB_8:
-		case TextureFormat::RGB_16:
-		case TextureFormat::RGB_16F:
-		case TextureFormat::RGB_32:
-		case TextureFormat::RGB_32F:
-		case TextureFormat::sRGB_8:
-			return 3;
-		case TextureFormat::RGBA_8:
-		case TextureFormat::RGBA_16:
-		case TextureFormat::RGBA_16F:
-		case TextureFormat::RGBA_32:
-		case TextureFormat::RGBA_32F:
-		case TextureFormat::sRGBA_8:
-			return 4;
-		case TextureFormat::DEPTH_24:
-			return 1;
-		default:
-			return 0;
-		}
+		return textureFormatChannelCount_Resolve[static_cast<unsigned>(format)];
 	}
 
 	void ClearBackBuffer()
