@@ -15,6 +15,7 @@ Highlight features include:
 * A modular and extendable particle system
 * Audio powered by OpenAL
 * Mesh and Texture loading
+* [GUI support](docs/GUI.md)
 * [FreeType text rendering](docs/Text.md)
 * Safe function delegates and event management
 * Robust fixed-timestep updates
@@ -40,7 +41,6 @@ Any git submodules which are required by your configuration are automatically pu
 Gemcutter is always being updated and improved. See the [Trello board](https://trello.com/b/Oc2GFT2A/gemcutter) to follow development.
 
 Future highlight features include:
-* GUI support
 * A fully featured world/UI editor
 * Bullet physics integration
 * Configurable memory management
