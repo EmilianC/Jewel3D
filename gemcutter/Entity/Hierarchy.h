@@ -48,6 +48,7 @@ namespace gem
 
 		// Gets the list of children held by this Entity.
 		const auto& GetChildren() const { return children; }
+		auto& GetChildren() { return children; }
 
 		// Gets the depth of this Entity in the hierarchy. The root is always depth 0.
 		// Direct children of the root are at depth 1, and so on.
