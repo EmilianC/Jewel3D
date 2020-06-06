@@ -2,6 +2,8 @@
 #include "Application.h"
 #include "gemcutter/Application/Logging.h"
 #include "gemcutter/Application/Timer.h"
+#include "gemcutter/GUI/Button.h"
+#include "gemcutter/GUI/Widget.h"
 #include "gemcutter/Input/Input.h"
 #include "gemcutter/Rendering/Light.h"
 #include "gemcutter/Rendering/ParticleEmitter.h"
@@ -439,6 +441,13 @@ namespace gem
 		EventQueue.Dispatch();
 
 		// Update engine components.
+		Widget::UpdateAll();
+
+		for (auto& button : All<Button>())
+		{
+			button.Update();
+		}
+
 		for (Entity& entity : With<ParticleUpdaterTag>())
 		{
 			entity.Get<ParticleEmitter>().Update();
