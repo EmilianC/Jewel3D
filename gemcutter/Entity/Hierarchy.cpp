@@ -157,7 +157,10 @@ namespace gem
 
 		if (auto lock = parent.lock())
 		{
-			transform = parentHierarchy->GetWorldTransform() * transform;
+			if (parentHierarchy->propagateTransform)
+			{
+				transform = parentHierarchy->GetWorldTransform() * transform;
+			}
 		}
 
 		return transform;
