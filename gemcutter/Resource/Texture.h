@@ -16,14 +16,17 @@ namespace gem
 		Texture() = default;
 		~Texture();
 
-		// Creates an empty texture that can be rendered to.
-		void CreateTexture(
+		// Creates an empty texture for render targets or custom data.
+		void Create(
 			unsigned width, unsigned height,
 			TextureFormat format,
 			TextureFilter filter = TextureFilter::Point,
 			TextureWraps wraps = TextureWrap::Clamp,
 			float anisotropicLevel = 1.0f,
 			unsigned numSamples = 1);
+
+		// Replaces the texture with the provided raw image data.
+		void SetData(const unsigned char* data, TextureFormat sourceFormat);
 
 		// Loads packed *.texture resources, as well as *.png, *.jpg, *.tga, *.bmp.
 		bool Load(std::string filePath);

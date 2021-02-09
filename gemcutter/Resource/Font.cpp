@@ -17,11 +17,10 @@ namespace gem
 
 	Font::Font()
 	{
-		memset(textures,   0, sizeof(unsigned) * 94);
 		memset(dimensions, 0, sizeof(CharData) * 94);
 		memset(positions,  0, sizeof(CharData) * 94);
 		memset(advances,   0, sizeof(CharData) * 94);
-		memset(masks,  false, sizeof(bool) * 94);
+		memset(masks,      false, sizeof(bool) * 94);
 	}
 
 	Font::~Font()
@@ -109,20 +108,20 @@ namespace gem
 		}
 
 		// Load bitmap data.
-		TextureFilter filter;
-		unsigned long int bitmapSize = 0;
+		TextureFilter filter = TextureFilter::Point;
+		unsigned textureWidth = 0;
 		unsigned char* bitmap = nullptr;
 		defer{ free(bitmap); };
 
 		// Read header.
-		fread(&bitmapSize, sizeof(unsigned long int), 1, fontFile);
+		fread(&textureWidth, sizeof(unsigned), 1, fontFile);
 		fread(&width, sizeof(unsigned), 1, fontFile);
 		fread(&height, sizeof(unsigned), 1, fontFile);
 		fread(&filter, sizeof(TextureFilter), 1, fontFile);
 
 		// Load Data.
-		bitmap = static_cast<unsigned char*>(malloc(sizeof(unsigned char) * bitmapSize));
-		fread(bitmap, sizeof(unsigned char), bitmapSize, fontFile);
+		bitmap = static_cast<unsigned char*>(malloc(sizeof(unsigned char) * textureWidth * textureWidth));
+		fread(bitmap, sizeof(unsigned char), textureWidth * textureWidth, fontFile);
 		fread(dimensions, sizeof(CharData), 94, fontFile);
 		fread(positions, sizeof(CharData), 94, fontFile);
 		fread(advances, sizeof(CharData), 94, fontFile);
@@ -131,50 +130,19 @@ namespace gem
 		fclose(fontFile);
 
 		// Upload data to OpenGL.
-		glGenTextures(94, textures);
+		texture = Texture::MakeNew();
+		texture->Create(textureWidth, textureWidth, TextureFormat::R_8, filter, TextureWrap::Clamp);
 
-		unsigned char* bitmapItr = bitmap;
-		for (unsigned i = 0; i < 94; ++i)
-		{
-			if (!masks[i])
-				continue;
-
-			glBindTexture(GL_TEXTURE_2D, textures[i]);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, ResolveFilterMag(filter));
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, ResolveFilterMin(filter));
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-
-			// Send the texture data.
-			int numLevels = 1;
-			if (ResolveMipMapping(filter))
-			{
-				float max = static_cast<float>(Max(dimensions[i].x, dimensions[i].y));
-				numLevels = static_cast<int>(std::floor(std::log2(max))) + 1;
-			}
-
-			glTexStorage2D(GL_TEXTURE_2D, numLevels, GL_R8, dimensions[i].x, dimensions[i].y);
-			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, dimensions[i].x, dimensions[i].y, GL_RED, GL_UNSIGNED_BYTE, bitmapItr);
-
-			if (numLevels > 1)
-			{
-				glGenerateMipmap(GL_TEXTURE_2D);
-			}
-
-			// Move the pointer to the next set of data.
-			bitmapItr += dimensions[i].x * dimensions[i].y;
-		}
-
-		glBindTexture(GL_TEXTURE_2D, GL_NONE);
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+		texture->SetData(bitmap, TextureFormat::R_8);
+		glPixelStorei(GL_UNPACK_ALIGNMENT, 4);
 
 		return true;
 	}
 
 	void Font::Unload()
 	{
-		glDeleteTextures(94, textures);
-
-		memset(textures, GL_NONE, sizeof(unsigned) * 94);
+		texture->Unload();
 	}
 
 	int Font::GetStringWidth(std::string_view text) const
@@ -211,9 +179,9 @@ namespace gem
 		return dimensions['Z' - '!'].y;
 	}
 
-	const unsigned* Font::GetTextures() const
+	Texture::Ptr Font::GetTexture() const
 	{
-		return textures;
+		return texture;
 	}
 
 	const CharData* Font::GetDimensions() const

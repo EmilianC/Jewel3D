@@ -15,7 +15,7 @@ namespace gem
 		Unload();
 	}
 
-	void Texture::CreateTexture(unsigned _width, unsigned _height, TextureFormat _format, TextureFilter _filter, TextureWraps _wraps, float _anisotropicLevel, unsigned _numSamples)
+	void Texture::Create(unsigned _width, unsigned _height, TextureFormat _format, TextureFilter _filter, TextureWraps _wraps, float _anisotropicLevel, unsigned _numSamples)
 	{
 		ASSERT(hTex == 0, "Texture already has a texture loaded.");
 		ASSERT(_anisotropicLevel >= 1.0f && _anisotropicLevel <= 16.0f, "'anisotropicLevel' must be in the range of [1, 16].");
@@ -62,6 +62,22 @@ namespace gem
 		glBindTexture(target, GL_NONE);
 	}
 
+	void Texture::SetData(const unsigned char* data, TextureFormat sourceFormat)
+	{
+		ASSERT(hTex != 0, "Texture object is not yet initialized.");
+		ASSERT(data, "'data' must be be valid.");
+
+		glBindTexture(target, hTex);
+		glTexSubImage2D(target, 0, 0, 0, width, height, ResolveDataFormat(sourceFormat), GL_UNSIGNED_BYTE, data);
+
+		if (CountMipLevels(width, height, filter) > 1)
+		{
+			glGenerateMipmap(target);
+		}
+
+		glBindTexture(target, GL_NONE);
+	}
+
 	bool Texture::Load(std::string filePath)
 	{
 		ASSERT(hTex == 0, "Texture already has a texture loaded.");
@@ -96,8 +112,9 @@ namespace gem
 			fread(&anisotropicLevel, sizeof(float), 1, fontFile);
 
 			numLevels = CountMipLevels(width, height, filter);
-			const unsigned textureSize = width * height * CountChannels(format);
-			const unsigned dataFormat = CountChannels(format) == 3 ? GL_RGB : GL_RGBA;
+			const unsigned numChannels = CountChannels(format);
+			const unsigned textureSize = width * height * numChannels;
+			const unsigned dataFormat  = ResolveDataFormat(format);
 			if (isCubeMap)
 			{
 				auto* image = static_cast<unsigned char*>(malloc(sizeof(unsigned char) * textureSize * 6));
@@ -163,10 +180,8 @@ namespace gem
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, ResolveWrap(wraps.y));
 			glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, anisotropicLevel);
 
-			const unsigned dataFormat = CountChannels(format) == 3 ? GL_RGB : GL_RGBA;
-
 			glTexStorage2D(GL_TEXTURE_2D, numLevels, ResolveFormat(format), width, height);
-			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, dataFormat, GL_UNSIGNED_BYTE, image.data);
+			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, ResolveDataFormat(format), GL_UNSIGNED_BYTE, image.data);
 
 			target = GL_TEXTURE_2D;
 		}

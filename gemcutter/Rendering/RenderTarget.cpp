@@ -47,7 +47,7 @@ namespace gem
 		if (hasDepth)
 		{
 			depth = Texture::MakeNew();
-			depth->CreateTexture(
+			depth->Create(
 				width, height,
 				TextureFormat::DEPTH_24, TextureFilter::Point,
 				TextureWrap::Clamp, 1.0f, numSamples);
@@ -111,7 +111,7 @@ namespace gem
 		ASSERT(!colors[index], "'index' is already initialized.");
 
 		colors[index] = Texture::MakeNew();
-		colors[index]->CreateTexture(width, height, format, filter, TextureWrap::Clamp, 1.0f, numSamples);
+		colors[index]->Create(width, height, format, filter, TextureWrap::Clamp, 1.0f, numSamples);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, FBO);
 
@@ -305,7 +305,7 @@ namespace gem
 		if (depth)
 		{
 			depth->Unload();
-			depth->CreateTexture(
+			depth->Create(
 				newWidth, newHeight,
 				TextureFormat::DEPTH_24, TextureFilter::Point,
 				TextureWrap::Clamp, 1.0f, numSamples);
@@ -327,7 +327,7 @@ namespace gem
 			const float oldAnisotropicLevel = colors[i]->GetAnisotropicLevel();
 			colors[i]->Unload();
 
-			colors[i]->CreateTexture(newWidth, newHeight, oldFormat, oldFilter, oldWrap, oldAnisotropicLevel, numSamples);
+			colors[i]->Create(newWidth, newHeight, oldFormat, oldFilter, oldWrap, oldAnisotropicLevel, numSamples);
 
 			glFramebufferTexture2D(
 				GL_FRAMEBUFFER,

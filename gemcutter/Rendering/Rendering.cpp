@@ -128,6 +128,27 @@ namespace
 		GL_SRGB8,
 		GL_SRGB8_ALPHA8
 	};
+
+	const int dataFormat_resolve[] = {
+		GL_RED,             // R_8
+		GL_RED,             // R_16
+		GL_RED,             // R_16F
+		GL_RED,             // R_32
+		GL_RED,             // R_32F
+		GL_RGB,             // RGB_8
+		GL_RGB,             // RGB_16
+		GL_RGB,             // RGB_16F
+		GL_RGB,             // RGB_32
+		GL_RGB,             // RGB_32F
+		GL_RGBA,            // RGBA_8
+		GL_RGBA,            // RGBA_16
+		GL_RGBA,            // RGBA_16F
+		GL_RGBA,            // RGBA_32
+		GL_RGBA,            // RGBA_32F
+		GL_DEPTH_COMPONENT, // DEPTH_24
+		GL_RGB,             // sRGB_8
+		GL_RGBA             // sRGBA_8
+	};
 }
 
 namespace gem
@@ -192,6 +213,11 @@ namespace gem
 	unsigned ResolveFormat(TextureFormat format)
 	{
 		return format_Resolve[static_cast<unsigned>(format)];
+	}
+
+	unsigned ResolveDataFormat(TextureFormat format)
+	{
+		return dataFormat_resolve[static_cast<unsigned>(format)];
 	}
 
 	TextureFilter StringToTextureFilter(std::string_view str)

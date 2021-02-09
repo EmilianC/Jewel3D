@@ -70,7 +70,7 @@ namespace gem
 	{
 		// The buffer contains vertex data or attributes.
 		Data,
-		// The buffer contiains indices defining primitive ordering.
+		// The buffer contains indices defining primitive ordering.
 		Index
 	};
 
@@ -176,6 +176,7 @@ namespace gem
 	bool ResolveMipMapping(TextureFilter);
 	int ResolveWrap(TextureWrap);
 	unsigned ResolveFormat(TextureFormat);
+	unsigned ResolveDataFormat(TextureFormat);
 
 	TextureFilter StringToTextureFilter(std::string_view);
 	TextureWrap StringToTextureWrap(std::string_view);

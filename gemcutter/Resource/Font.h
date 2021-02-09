@@ -2,6 +2,7 @@
 #pragma once
 #include "gemcutter/Resource/Resource.h"
 #include "gemcutter/Resource/Shareable.h"
+#include "gemcutter/Resource/Texture.h"
 
 #include <string_view>
 
@@ -30,7 +31,7 @@ namespace gem
 		int GetStringWidth(std::string_view text) const;
 		int GetStringHeight() const;
 
-		const unsigned* GetTextures() const;
+		Texture::Ptr GetTexture() const;
 		const CharData* GetDimensions() const;
 		const CharData* GetPositions() const;
 		const CharData* GetAdvances() const;
@@ -42,7 +43,7 @@ namespace gem
 		static unsigned GetVBO();
 
 	private:
-		unsigned textures[94];
+		Texture::Ptr texture;
 		// Each character's dimensions.
 		CharData dimensions[94];
 		// The position of each character.

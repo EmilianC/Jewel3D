@@ -1,5 +1,6 @@
 // Copyright (c) 2017 Emilian Cioca
 #include "FontEncoder.h"
+#include <gemcutter/Math/Math.h>
 #include <gemcutter/Rendering/Rendering.h>
 #include <gemcutter/Utilities/String.h>
 
@@ -8,6 +9,8 @@
 #include <vector>
 
 #define CURRENT_VERSION 2
+
+constexpr unsigned NUM_CHARACTERS = 94;
 
 struct CharData
 {
@@ -119,30 +122,26 @@ bool FontEncoder::Validate(const gem::ConfigTable& metadata, unsigned loadedVers
 bool FontEncoder::Convert(std::string_view source, std::string_view destination, const gem::ConfigTable& metadata) const
 {
 	const std::string outputFile = std::string(destination) + gem::ExtractFilename(source) + ".font";
-	const unsigned width = static_cast<unsigned>(metadata.GetInt("width"));
+	const unsigned width  = static_cast<unsigned>(metadata.GetInt("width"));
 	const unsigned height = static_cast<unsigned>(metadata.GetInt("height"));
 
-	gem::TextureFilter filter = gem::TextureFilter::Point;
-	{
-		std::string str = metadata.GetString("texture_filter");
-		if (gem::CompareLowercase(str, "linear"))
-			filter = gem::TextureFilter::Linear;
-		else if (gem::CompareLowercase(str, "bilinear"))
-			filter = gem::TextureFilter::Bilinear;
-		else if (gem::CompareLowercase(str, "trilinear"))
-			filter = gem::TextureFilter::Trilinear;
-	}
+	const gem::TextureFilter filter = gem::StringToTextureFilter(metadata.GetString("texture_filter"));
 
-	// File preparation.
-	std::vector<unsigned char> bitmapBuffer;
-	CharData dimensions[94] = { CharData() };
-	CharData positions[94] = { CharData() };
-	CharData advances[94] = { CharData() };
-	bool masks[94] = { false }; // If a character is present in the font face.
+	// 10x10 grid of textures.
+	const unsigned characterDimension = gem::Max(width, height);
+	const unsigned textureWidth = characterDimension * 10;
+	const unsigned textureHeight = textureWidth;
+	const unsigned long int bitmapSize = textureWidth * textureHeight;
+	auto* bitmapBuffer = static_cast<unsigned char*>(calloc(bitmapSize, sizeof(unsigned char)));
+	defer { free(bitmapBuffer); };
 
-	// FreeType variables.
+	CharData dimensions[NUM_CHARACTERS] = { CharData() };
+	CharData positions[NUM_CHARACTERS] = { CharData() };
+	CharData advances[NUM_CHARACTERS] = { CharData() };
+	bool masks[NUM_CHARACTERS] = { false }; // If a character is present in the font face.
+	FT_Face face[NUM_CHARACTERS] = { nullptr }; // This is probably incorrect.
+
 	FT_Library library;
-	FT_Face face;
 
 	if (FT_Init_FreeType(&library))
 	{
@@ -158,20 +157,17 @@ bool FontEncoder::Convert(std::string_view source, std::string_view destination,
 		return false;
 	}
 
-	// Set font size.
-	if (FT_Set_Char_Size(face, width * 64, height * 64, 96, 96))
+	// Set font size. 1pt = 1/72inch.
+	if (FT_Set_Char_Size(face, width << 6, height << 6, 72, 72))
 	{
 		gem::Error("The width and height could not be processed.");
 		return false;
 	}
 
-	// Estimation of the buffer size we will need.
-	bitmapBuffer.reserve(width * height * 94);
-
 	// Process ASCII characters from 33 ('!'), to 126 ('~').
-	for (unsigned char c = 33; c < 127; c++)
+	for (unsigned i = 0; i < NUM_CHARACTERS; ++i)
 	{
-		unsigned index = c - 33;
+		unsigned char c = static_cast<char>(i + 33);
 		auto charIndex = FT_Get_Char_Index(face, c);
 
 		// Prepare bitmap.
@@ -181,33 +177,51 @@ bool FontEncoder::Convert(std::string_view source, std::string_view destination,
 			return false;
 		}
 
-		if (charIndex != 0 &&
-			face->glyph->bitmap.width * face->glyph->bitmap.rows != 0)
-		{
-			// Save the bitmap as a flipped image.
-			for (int i = face->glyph->bitmap.rows - 1; i >= 0; i--)
-			{
-				for (int j = 0; j < face->glyph->bitmap.width; ++j)
-				{
-					bitmapBuffer.push_back(face->glyph->bitmap.buffer[face->glyph->bitmap.width * i + j]);
-				}
-			}
+		dimensions[i].x = face->glyph->bitmap.width;
+		dimensions[i].y = face->glyph->bitmap.rows;
 
-			masks[index] = true;
-		}
-		else
+		positions[i].x = face->glyph->bitmap_left;
+		positions[i].y = face->glyph->bitmap_top - face->glyph->bitmap.rows;
+
+		advances[i].x = face->glyph->advance.x >> 6;
+		advances[i].y = face->glyph->advance.y >> 6;
+
+		if (charIndex == 0 || (face->glyph->bitmap.width * face->glyph->bitmap.rows == 0))
 		{
-			masks[index] = false;
+			continue;
 		}
 
-		dimensions[index].x = face->glyph->bitmap.width;
-		dimensions[index].y = face->glyph->bitmap.rows;
+		if (face->glyph->bitmap.width > width)
+		{
+			Jwl::Error("Glyph (%c) is too wide", c);
+			return false;
+		}
 
-		positions[index].x = face->glyph->bitmap_left;
-		positions[index].y = face->glyph->bitmap_top - face->glyph->bitmap.rows;
+		if (face->glyph->bitmap.rows > (int)height)
+		{
+			Jwl::Error("Glyph (%c) is too tall", c);
+			return false;
+		}
 
-		advances[index].x = face->glyph->advance.x / 64;
-		advances[index].y = face->glyph->advance.y / 64;
+		masks[i] = true;
+	}
+
+	unsigned char* writer = bitmapBuffer;
+	writer += (i / 10u) * textureWidth * characterDimension;
+	writer += (i % 10u) * characterDimension;
+
+	// Save the bitmap as a flipped image.
+	for (int y = face->glyph->bitmap.rows - 1; y-- > 0;)
+	{
+		for (int x = 0; x < face->glyph->bitmap.width; ++x)
+		{
+			unsigned char pixel = face->glyph->bitmap.buffer[face->glyph->bitmap.width * y + x];
+
+			*(writer + x) = pixel;
+		}
+
+		// Step to the next row.
+		writer += textureWidth;
 	}
 
 	// Save file.
@@ -219,25 +233,25 @@ bool FontEncoder::Convert(std::string_view source, std::string_view destination,
 	}
 
 	// Write header.
-	unsigned long int bitmapSize = bitmapBuffer.size();
-	fwrite(&bitmapSize, sizeof(unsigned long int), 1, fontFile);
+	fwrite(&textureWidth, sizeof(unsigned), 1, fontFile);
+	fwrite(&textureHeight, sizeof(unsigned), 1, fontFile);
 	fwrite(&width, sizeof(unsigned), 1, fontFile);
 	fwrite(&height, sizeof(unsigned), 1, fontFile);
 	fwrite(&filter, sizeof(gem::TextureFilter), 1, fontFile);
 
 	// Write Data.
-	fwrite(bitmapBuffer.data(), sizeof(unsigned char), bitmapSize, fontFile);
-	fwrite(dimensions, sizeof(CharData), 94, fontFile);
-	fwrite(positions, sizeof(CharData), 94, fontFile);
-	fwrite(advances, sizeof(CharData), 94, fontFile);
-	fwrite(masks, sizeof(bool), 94, fontFile);
+	fwrite(bitmapBuffer, sizeof(unsigned char), bitmapSize, fontFile);
+	fwrite(dimensions, sizeof(CharData), NUM_CHARACTERS, fontFile);
+	fwrite(positions, sizeof(CharData), NUM_CHARACTERS, fontFile);
+	fwrite(advances, sizeof(CharData), NUM_CHARACTERS, fontFile);
+	fwrite(masks, sizeof(bool), NUM_CHARACTERS, fontFile);
 
-	auto result = fclose(fontFile);
+	int result = fclose(fontFile);
 
 	// Report results.
 	unsigned count = 0;
 	std::string missingChars;
-	for (unsigned i = 0; i < 94; ++i)
+	for (unsigned i = 0; i < NUM_CHARACTERS; ++i)
 	{
 		if (masks[i])
 		{
@@ -256,14 +270,14 @@ bool FontEncoder::Convert(std::string_view source, std::string_view destination,
 	}
 	else if (count == 0)
 	{
-		gem::Error("Failed to generate Font Binary\n0 out of 94 characters loaded.");
+		gem::Error("Failed to generate Font Binary\n0 characters loaded.");
 		return false;
 	}
 	else
 	{
-		if (count != 94)
+		if (count != NUM_CHARACTERS)
 		{
-			gem::Warning("%d characters were not created.\n%s", 94 - count, missingChars.c_str());
+			gem::Warning("%d characters were not created.\n%s", NUM_CHARACTERS - count, missingChars.c_str());
 		}
 
 		return true;
