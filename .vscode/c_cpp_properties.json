@@ -4,6 +4,7 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/**",
+                "${workspaceFolder}/external/box2d/include/",
                 "${workspaceFolder}/external/catch/**",
                 "${workspaceFolder}/external/dirent/**",
                 "${workspaceFolder}/external/freetype/**",

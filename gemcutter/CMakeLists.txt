@@ -135,6 +135,7 @@ target_link_libraries(gemcutter
 	PRIVATE
 		dirent
 	PUBLIC
+		box2d
 		OpenAL
 		OpenGL::GL
 		soil

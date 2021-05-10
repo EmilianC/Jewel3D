@@ -8,3 +8,6 @@
 [submodule "samples"]
 	path = samples
 	url = https://github.com/EmilianC/Gemcutter-Samples.git
+[submodule "external/box2d"]
+	path = external/box2d
+	url = https://github.com/erincatto/box2d.git

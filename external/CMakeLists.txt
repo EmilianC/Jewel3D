@@ -1,6 +1,14 @@
 # Append to any IDE folders already set be calling scripts.
 set(PARENT_FOLDER ${CMAKE_FOLDER})
 
+# Box2d #
+set(CMAKE_FOLDER "${PARENT_FOLDER}/external/box2d")
+set(BOX2D_BUILD_DOCS       OFF CACHE BOOL "")
+set(BOX2D_BUILD_TESTBED    OFF CACHE BOOL "")
+set(BOX2D_BUILD_UNIT_TESTS OFF CACHE BOOL "")
+set(BOX2D_USER_SETTINGS    OFF CACHE BOOL "")
+add_subdirectory(box2d)
+
 # Catch #
 set(CMAKE_FOLDER "${PARENT_FOLDER}/external/catch")
 add_library(catch INTERFACE)
