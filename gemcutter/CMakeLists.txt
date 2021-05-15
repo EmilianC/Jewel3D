@@ -50,6 +50,15 @@ list(APPEND gemcutter_files
 	"Network/Network.cpp"
 	"Network/Network.h"
 
+	"Physics/2D/PhysicsDebug.cpp"
+	"Physics/2D/PhysicsDebug.h"
+	"Physics/2D/PhysicsWorld.cpp"
+	"Physics/2D/PhysicsWorld.h"
+	"Physics/2D/PhysicsWorld.inl"
+	"Physics/2D/RigidBody.cpp"
+	"Physics/2D/RigidBody.h"
+	"Physics/Physics.h"
+
 	"Rendering/Camera.cpp"
 	"Rendering/Camera.h"
 	"Rendering/Light.cpp"
