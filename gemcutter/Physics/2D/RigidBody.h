@@ -4,9 +4,6 @@
 #include "gemcutter/Math/Vector.h"
 #include "gemcutter/Physics/Physics.h"
 
-#include <functional>
-#include <vector>
-
 class b2Body;
 class b2Fixture;
 struct b2JointEdge;

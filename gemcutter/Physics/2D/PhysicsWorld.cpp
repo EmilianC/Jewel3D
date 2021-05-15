@@ -191,7 +191,7 @@ namespace gem
 	#endif
 	}
 
-	void PhysicsWorldSingleton::DrawDebug()
+	void PhysicsWorldSingleton::DrawDebug() const
 	{
 	#ifdef _DEBUG
 		if (debugRenderer)

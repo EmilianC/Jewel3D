@@ -41,9 +41,7 @@ namespace
 	constexpr unsigned BUFFER_COUNT = 4096;
 	constexpr unsigned BUFFER_SIZE  = BUFFER_COUNT * (POS_SIZE + COLOR_SIZE);
 	constexpr unsigned COLOR_OFFSET = BUFFER_COUNT * POS_SIZE;
-
 	constexpr unsigned CIRCLE_SEGMENTS = 17;
-	constexpr unsigned INDEX_SENTINEL  = std::numeric_limits<unsigned short>::max();
 }
 
 namespace gem

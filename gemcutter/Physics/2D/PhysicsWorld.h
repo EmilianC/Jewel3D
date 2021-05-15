@@ -53,7 +53,7 @@ namespace gem
 
 		void SetDebugEnabled(bool enabled);
 		bool GetDebugEnabled() const;
-		void DrawDebug();
+		void DrawDebug() const;
 
 	private:
 		b2World world;
