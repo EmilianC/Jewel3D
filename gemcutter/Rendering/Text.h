@@ -25,6 +25,6 @@ namespace gem
 		bool centeredX = false;
 		bool centeredY = false;
 		// Scale of spacing between letters.
-		float kernel = 1.0f;
+		float Kerning = 1.0f;
 	};
 }

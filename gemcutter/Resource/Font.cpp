@@ -17,10 +17,7 @@ namespace gem
 
 	Font::Font()
 	{
-		memset(dimensions, 0, sizeof(CharData) * 94);
-		memset(positions,  0, sizeof(CharData) * 94);
-		memset(advances,   0, sizeof(CharData) * 94);
-		memset(masks,      false, sizeof(bool) * 94);
+		memset(characters, 0, sizeof(Character) * NUM_CHARACTERS);
 	}
 
 	Font::~Font()
@@ -110,28 +107,27 @@ namespace gem
 		// Load bitmap data.
 		TextureFilter filter = TextureFilter::Point;
 		unsigned textureWidth = 0;
+		unsigned textureHeight = 0;
 		unsigned char* bitmap = nullptr;
 		defer{ free(bitmap); };
 
 		// Read header.
 		fread(&textureWidth, sizeof(unsigned), 1, fontFile);
-		fread(&width, sizeof(unsigned), 1, fontFile);
-		fread(&height, sizeof(unsigned), 1, fontFile);
+		fread(&textureHeight, sizeof(unsigned), 1, fontFile);
+		fread(&spaceWidth, sizeof(int), 1, fontFile);
+		fread(&stringHeight, sizeof(int), 1, fontFile);
 		fread(&filter, sizeof(TextureFilter), 1, fontFile);
+		unsigned textureSize = textureWidth * textureHeight;
 
 		// Load Data.
-		bitmap = static_cast<unsigned char*>(malloc(sizeof(unsigned char) * textureWidth * textureWidth));
-		fread(bitmap, sizeof(unsigned char), textureWidth * textureWidth, fontFile);
-		fread(dimensions, sizeof(CharData), 94, fontFile);
-		fread(positions, sizeof(CharData), 94, fontFile);
-		fread(advances, sizeof(CharData), 94, fontFile);
-		fread(masks, sizeof(bool), 94, fontFile);
-
+		bitmap = static_cast<unsigned char*>(malloc(sizeof(unsigned char) * textureSize));
+		fread(bitmap, sizeof(unsigned char), textureSize, fontFile);
+		fread(characters, sizeof(Character), NUM_CHARACTERS, fontFile);
 		fclose(fontFile);
 
 		// Upload data to OpenGL.
 		texture = Texture::MakeNew();
-		texture->Create(textureWidth, textureWidth, TextureFormat::R_8, filter, TextureWrap::Clamp);
+		texture->Create(textureWidth, textureHeight, TextureFormat::R_8, filter, TextureWrap::Clamp);
 
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 		texture->SetData(bitmap, TextureFormat::R_8);
@@ -154,7 +150,7 @@ namespace gem
 		{
 			if (ch == ' ')
 			{
-				length += advances['Z' - '!'].x;
+				length += spaceWidth;
 			}
 			else if (ch == '\n')
 			{
@@ -163,55 +159,39 @@ namespace gem
 			}
 			else if (ch == '\t')
 			{
-				length += advances['Z' - '!'].x * 4;
+				length += spaceWidth * 4;
 			}
 			else
 			{
-				length += advances[ch - '!'].x;
+				auto& data = characters[ch - 33];
+				if (data.isValid)
+				{
+					length += data.advanceX;
+				}
 			}
 		}
 
 		return Max(largest, length);
 	}
 
+	int Font::GetSpaceWidth() const
+	{
+		return spaceWidth;
+	}
+
 	int Font::GetStringHeight() const
 	{
-		return dimensions['Z' - '!'].y;
+		return stringHeight;
 	}
 
-	Texture::Ptr Font::GetTexture() const
+	Texture* Font::GetTexture() const
 	{
-		return texture;
+		return texture.get();
 	}
 
-	const CharData* Font::GetDimensions() const
+	const Font::Character* Font::GetCharacters() const
 	{
-		return dimensions;
-	}
-
-	const CharData* Font::GetPositions() const
-	{
-		return positions;
-	}
-
-	const CharData* Font::GetAdvances() const
-	{
-		return advances;
-	}
-
-	const bool* Font::GetMasks() const
-	{
-		return masks;
-	}
-
-	unsigned Font::GetFontWidth() const
-	{
-		return width;
-	}
-
-	unsigned Font::GetFontHeight() const
-	{
-		return height;
+		return characters;
 	}
 
 	unsigned Font::GetVAO()
